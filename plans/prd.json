@@ -1,0 +1,224 @@
+[
+  {
+    "category": "infrastructure",
+    "description": "Bootstrap Next.js 15 project with TypeScript strict, SCSS, zustand, react-hook-form, zod, react-i18next",
+    "steps": [
+      "Run: npx create-next-app@latest . --typescript --app --no-tailwind --no-src-dir --import-alias '@/*'",
+      "Install: npm install zustand react-hook-form zod react-i18next i18next",
+      "Install dev: npm install -D sass eslint-config-prettier stylelint stylelint-config-standard-scss",
+      "Configure tsconfig.json with strict: true",
+      "Setup .eslintrc.json with @typescript-eslint/no-explicit-any: error and no-unused-vars: error",
+      "Setup .stylelintrc.json extending stylelint-config-standard-scss",
+      "Setup prettier.config.js",
+      "Verify: npm run build exits 0"
+    ],
+    "passes": true
+  },
+  {
+    "category": "infrastructure",
+    "description": "Setup i18n with react-i18next — EN + RU locale files and provider",
+    "steps": [
+      "Create locales/en/withdraw.json and locales/ru/withdraw.json with all UI string keys",
+      "Create src/shared/i18n/config.ts initializing i18next with react-i18next",
+      "Create src/shared/i18n/I18nProvider.tsx client component wrapping children with I18nextProvider",
+      "Add I18nProvider to app/layout.tsx",
+      "Export from src/shared/i18n/index.ts",
+      "Verify: no hardcoded user-visible strings in any .tsx file"
+    ],
+    "passes": false
+  },
+  {
+    "category": "infrastructure",
+    "description": "Setup design system via ui-ux-pro-max — fintech crypto dark SCSS tokens",
+    "steps": [
+      "Run: python3 .agent/skills/ui-ux-pro-max/scripts/search.py 'fintech crypto withdrawal form dark professional' --design-system --persist -p 'Withdraw' --page 'withdraw'",
+      "Create src/app/globals.scss with CSS custom properties from design system output (colors, spacing, radii, shadows)",
+      "Create src/app/typography.scss importing Google Fonts and defining font variables",
+      "Import both in app/layout.tsx",
+      "Verify: npm run build exits 0, fonts load in browser"
+    ],
+    "passes": false
+  },
+  {
+    "category": "infrastructure",
+    "description": "Mock API route: POST /v1/withdrawals and GET /v1/withdrawals/[id]",
+    "steps": [
+      "Create app/api/v1/withdrawals/route.ts handling POST with idempotency_key deduplication in-memory Map",
+      "POST: validate body {amount, destination, confirm}, return 201 with {id, amount, destination, status:'pending'}, return 409 if same idempotency_key seen within 5 min",
+      "Create app/api/v1/withdrawals/[id]/route.ts handling GET, returns the withdrawal record or 404",
+      "Add artificial 800ms delay to simulate network",
+      "Export types: WithdrawalRequest, WithdrawalResponse from src/shared/types/api.ts",
+      "Verify: curl POST returns 201, second identical POST returns 409, GET returns record"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Withdrawal API client layer with idempotency_key generation and retry logic",
+    "steps": [
+      "Create src/features/withdraw/api/withdrawalApi.ts",
+      "Implement createWithdrawal(payload, key): calls POST /v1/withdrawals, throws typed ApiError on 4xx/5xx",
+      "Implement getWithdrawal(id): calls GET /v1/withdrawals/{id}",
+      "idempotency_key = crypto.randomUUID() generated once per form session, persisted in store",
+      "On network error (fetch throws), propagate as NetworkError so UI can offer retry",
+      "On 409, propagate as ConflictError with message for user display",
+      "Export from src/features/withdraw/api/index.ts",
+      "No token in localStorage — auth is mocked (describe prod approach in README)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Zustand store: withdraw feature state — idle/loading/success/error + idempotency_key",
+    "steps": [
+      "Create src/features/withdraw/store/useWithdrawStore.ts",
+      "State shape: { status: 'idle'|'loading'|'success'|'error', error: string|null, withdrawal: WithdrawalResponse|null, idempotencyKey: string }",
+      "Actions: submit(payload), retry(), reset()",
+      "submit: set loading, call createWithdrawal, on success set withdrawal+status='success', on ConflictError set error with 409 message, on NetworkError set error with retry flag",
+      "idempotencyKey initialized once via crypto.randomUUID(), regenerated only after success/reset",
+      "Export from src/features/withdraw/store/index.ts",
+      "Verify: store unit test — submit transitions idle→loading→success"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Withdraw form validation schema with zod + react-hook-form",
+    "steps": [
+      "Create src/features/withdraw/utils/withdrawSchema.ts",
+      "Schema: z.object({ amount: z.number().positive(), destination: z.string().min(1), confirm: z.literal(true) })",
+      "All error messages use i18n keys (no hardcoded strings)",
+      "Export WithdrawSchema type and schema from src/features/withdraw/utils/index.ts",
+      "Verify: schema rejects amount<=0, empty destination, unchecked confirm"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Build WithdrawForm component — fields, validation, submission, double-submit guard",
+    "steps": [
+      "Create src/features/withdraw/components/WithdrawForm.tsx",
+      "Use useForm<WithdrawSchema> with zodResolver",
+      "Fields: amount (number input, >0), destination (text input), confirm (checkbox)",
+      "Submit button: disabled when form invalid OR status==='loading'",
+      "onSubmit calls store.submit(data) — store status prevents double-submit",
+      "Display inline field errors from react-hook-form",
+      "No hardcoded strings — all labels/errors via useTranslation()",
+      "Export from src/features/withdraw/components/index.ts"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Build UI state components: LoadingState, ErrorState (with retry), SuccessState",
+    "steps": [
+      "Create src/features/withdraw/ui/LoadingState.tsx — spinner + 'Processing...' i18n key",
+      "Create src/features/withdraw/ui/ErrorState.tsx — displays error.message, Retry button (calls store.retry() which reuses same idempotencyKey for network errors, resets key for others), Back button",
+      "Create src/features/withdraw/ui/SuccessState.tsx — shows withdrawal id, amount, destination, status from store.withdrawal",
+      "All strings via useTranslation()",
+      "Export from src/features/withdraw/ui/index.ts"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Build WithdrawWidget — orchestrates form + state transitions",
+    "steps": [
+      "Create src/features/withdraw/widgets/WithdrawWidget.tsx",
+      "Read status from useWithdrawStore()",
+      "Render: status==='idle'|'error' → <WithdrawForm/> + <ErrorState/> if error, status==='loading' → <LoadingState/>, status==='success' → <SuccessState/>",
+      "Use React.memo on sub-components to reduce re-renders",
+      "Export from src/features/withdraw/widgets/index.ts"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Wire Withdraw page (app/withdraw/page.tsx) and apply design system styles",
+    "steps": [
+      "Create app/withdraw/page.tsx — server component, renders <WithdrawWidget/> centered on page",
+      "Create src/features/withdraw/withdraw.module.scss — layout styles using CSS tokens from design system",
+      "Apply glassmorphism card style, dark background, premium typography per design-system output",
+      "Add metadata: title='Withdraw | USDT', description for SEO",
+      "Verify: npm run dev, page renders at /withdraw with correct layout"
+    ],
+    "passes": false
+  },
+  {
+    "category": "styling",
+    "description": "Polish UI — animations, hover states, responsive, accessibility",
+    "steps": [
+      "Add CSS transitions on button hover/active states (150-300ms)",
+      "Add loading spinner animation via @keyframes in SCSS",
+      "Ensure form inputs have associated <label> elements with htmlFor",
+      "Add focus-visible styles for keyboard navigation",
+      "Test responsive at 375px, 768px, 1024px — no horizontal scroll",
+      "Check color contrast >= 4.5:1 for all text",
+      "Add @media (prefers-reduced-motion: reduce) to disable animations",
+      "Verify: npm run build, no stylelint errors"
+    ],
+    "passes": false
+  },
+  {
+    "category": "infrastructure",
+    "description": "Optional: persist last withdrawal to sessionStorage (5-min TTL) for reload recovery",
+    "steps": [
+      "In useWithdrawStore, add zustand persist middleware with sessionStorage and a custom TTL check",
+      "On store hydration, if stored withdrawal is older than 5 min, clear it",
+      "Show restored withdrawal in SuccessState on reload",
+      "Verify: submit form, reload page, SuccessState still shows the withdrawal"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Write unit tests — happy-path submit, API error, double-submit guard",
+    "steps": [
+      "Install: npm install -D jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom ts-jest",
+      "Configure jest.config.ts with jsdom environment and moduleNameMapper for SCSS",
+      "Test 1 (happy-path): render WithdrawForm, fill valid amount+destination+confirm, submit, assert store.status becomes 'success' and SuccessState renders withdrawal id",
+      "Test 2 (API 409 error): mock createWithdrawal to throw ConflictError, submit, assert ErrorState renders 409 message",
+      "Test 3 (double-submit): submit once (mock slow API), attempt second submit while loading, assert createWithdrawal called exactly once",
+      "Run: npx jest --coverage, all 3 tests pass"
+    ],
+    "passes": false
+  },
+  {
+    "category": "infrastructure",
+    "description": "Optional: E2E test with Playwright — full happy-path and 409 flow",
+    "steps": [
+      "Install: npm install -D @playwright/test, run npx playwright install chromium",
+      "Create tests/e2e/withdraw.spec.ts",
+      "Test 1 (happy-path): navigate /withdraw, fill form, submit, assert success state shows withdrawal id",
+      "Test 2 (409): intercept POST route and force 409 response, submit, assert error message visible",
+      "Run: npx playwright test, all tests pass"
+    ],
+    "passes": false
+  },
+  {
+    "category": "infrastructure",
+    "description": "Write README.md — setup, run, key decisions, prod auth approach",
+    "steps": [
+      "Document: npm install, npm run dev, npm test, npx playwright test",
+      "Key decisions: idempotency_key strategy, retry vs reset logic, zustand over Context, sessionStorage TTL",
+      "Prod auth approach: access token in HttpOnly cookie set by server, never exposed to JS; use Next.js middleware for route protection",
+      "Security notes: no dangerouslySetInnerHTML, no localStorage tokens, zod schema validation on both client and API route",
+      "Verify: README.md renders correctly on GitHub"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Final code review — run frontend-code-review validation scripts",
+    "steps": [
+      "Run: npm run lint (ESLint) — 0 errors",
+      "Run: npx stylelint 'src/**/*.scss' — 0 errors",
+      "Run: npx tsc --noEmit — 0 errors",
+      "Run: npx jest — all tests pass",
+      "Check: no console.log, no 'any' type, no unused variables, no hardcoded user-visible strings",
+      "Check: every folder has index.ts re-exporting its public API",
+      "Verify: npm run build exits 0 with no warnings"
+    ],
+    "passes": false
+  }
+]
