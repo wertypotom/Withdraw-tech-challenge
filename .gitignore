@@ -9,6 +9,9 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.agent
+progress.txt
+/plans
 
 # testing
 /coverage
