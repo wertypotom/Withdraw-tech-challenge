@@ -1,0 +1,37 @@
+{
+  "form": {
+    "title": "Withdraw USDT",
+    "amount": {
+      "label": "Amount",
+      "placeholder": "Enter amount"
+    },
+    "destination": {
+      "label": "Destination address",
+      "placeholder": "Enter wallet address"
+    },
+    "confirm": {
+      "label": "I confirm this withdrawal is correct"
+    },
+    "submit": "Submit withdrawal"
+  },
+  "errors": {
+    "amount": "Amount must be greater than 0",
+    "destination": "Destination address is required",
+    "confirm": "You must confirm the withdrawal",
+    "conflict": "This withdrawal was already submitted. Please check your withdrawal history.",
+    "network": "Network error. Please try again."
+  },
+  "states": {
+    "loading": "Processing your withdrawal…",
+    "success": {
+      "title": "Withdrawal submitted",
+      "id": "ID: {{id}}",
+      "status": "Status: {{status}}"
+    },
+    "error": {
+      "title": "Something went wrong",
+      "retry": "Try again",
+      "back": "Back to form"
+    }
+  }
+}
