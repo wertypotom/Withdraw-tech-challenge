@@ -1,8 +1,8 @@
 # Withdraw App
 
-A USDT withdrawal page built with Next.js 16, Zustand, React Hook Form, and Zod.
+Страница вывода USDT на Next.js 16, Zustand, React Hook Form и Zod.
 
-## How to run
+## Как запустить
 
 ```bash
 npm install
@@ -10,64 +10,64 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000/withdraw](http://localhost:3000/withdraw).
+Откройте [http://localhost:3000/withdraw](http://localhost:3000/withdraw).
 
-## Scripts
+## Скрипты
 
 ```bash
-npm run dev          # start dev server
-npm run build        # production build
-npm run typecheck    # TypeScript check
-npm test             # unit tests
-npm run test:e2e     # E2E tests (Playwright)
+npm run dev          # запуск dev-сервера
+npm run build        # production сборка
+npm run typecheck    # проверка TypeScript
+npm test             # юнит-тесты
+npm run test:e2e     # E2E-тесты (Playwright)
 ```
 
-## What's implemented
+## Что реализовано
 
-**Core flow:**
+**Основной флоу:**
 
-- Amount, destination, and confirmation checkbox with Zod validation
-- Submit is disabled until the form is valid and during the request
-- On submit, POSTs to `/api/v1/withdrawals` and then fetches the created withdrawal via `GET /api/v1/withdrawals/{id}` to show the server-confirmed status
-- 409 Conflict and network errors are shown in a dedicated error state
-- Network errors show a Retry button; the form pre-fills with the last entered values so the user doesn't have to retype
+- Поля: сумма, адрес назначения и чекбокс подтверждения — с валидацией через Zod
+- Кнопка Submit заблокирована до тех пор, пока форма невалидна или идёт запрос
+- При отправке делается POST на `/api/v1/withdrawals`, затем GET на `/api/v1/withdrawals/{id}` — чтобы отобразить актуальный статус с сервера
+- Ошибки 409 Conflict и сетевые ошибки показываются в отдельном состоянии ошибки
+- При сетевой ошибке отображается кнопка Retry; форма заполняется последними введёнными данными — переписывать их не нужно
 
-**Resilience:**
+**Устойчивость:**
 
-- Double-submit is prevented: the submit button is disabled and the store ignores calls while `status === 'loading'`
-- Every request carries an `idempotency_key` (UUID). Retries reuse the same key, so even if the server receives the request twice it won't create a duplicate withdrawal. A new key is generated only when the user explicitly resets the form.
+- Двойной submit заблокирован: кнопка дизейблится, а стор игнорирует вызовы пока `status === 'loading'`
+- Каждый запрос содержит `idempotency_key` (UUID). При ретрае используется тот же ключ — даже если сервер получит запрос дважды, дубль не создастся. Новый ключ генерируется только при явном сбросе формы
 
-**Reload recovery:**
+**Восстановление после перезагрузки:**
 
-- After a successful submission, only the withdrawal **ID** is saved to `sessionStorage` with a 5-minute TTL. On the next page load, the app fetches that ID from the server and restores the success state. No sensitive data (amount, address) is ever stored on the client.
+- После успешной отправки в `sessionStorage` сохраняется только **ID** заявки с TTL 5 минут. При следующей загрузке страницы приложение делает GET по этому ID и восстанавливает состояние успеха. Чувствительные данные (сумма, адрес) на клиенте никогда не хранятся
 
-## Auth — mock vs production
+## Авторизация — моковая vs продакшн
 
-Auth is mocked in this implementation (no real tokens). In production:
+В этой реализации авторизация замокана. В продакшне:
 
-The API would issue a short-lived JWT as an `HttpOnly`, `Secure`, `SameSite=Strict` cookie. This means JavaScript never has access to the token, which closes the main XSS attack vector. Next.js Middleware would check for the cookie and redirect unauthenticated users before any page renders. Refresh tokens would also live in an `HttpOnly` cookie and be rotated server-side silently.
+API выдаёт короткоживущий JWT в виде `HttpOnly`, `Secure`, `SameSite=Strict` куки — JavaScript к нему доступа не имеет, что закрывает основной XSS-вектор. Next.js Middleware проверяет куку и редиректит неавторизованных пользователей до рендера страницы. Refresh-токены тоже хранятся в `HttpOnly` куке и обновляются на сервере незаметно для клиента.
 
-`localStorage` and `sessionStorage` are not used for tokens because any XSS script can read them. Cookies with the right flags cannot be read by JavaScript at all.
+`localStorage` и `sessionStorage` для токенов не используются — любой XSS-скрипт может их прочитать. Куки с правильными флагами JavaScript прочитать не может.
 
-## Key decisions and trade-offs
+## Ключевые решения и trade-offs
 
-**Zustand over Context/Redux**
+**Zustand вместо Context/Redux**
 
-Zustand gives per-field subscriptions, so components only re-render when the specific slice of state they use changes. With Context, any state change re-renders the entire tree under the provider. Redux would work too but adds significant boilerplate for a single-feature app. The trade-off is that Zustand has less ecosystem tooling (no time-travel debugger out of the box), but for this scope that doesn't matter.
+Zustand даёт подписку на конкретные поля стора — компоненты ре-рендерятся только при изменении того слайса состояния, который они используют. С Context любое изменение состояния ре-рендерит всё дерево под провайдером. Redux тоже подошёл бы, но для одной фичи приносит избыточный бойлерплейт. Компромисс: у Zustand меньше экосистемного инструментария (нет time-travel дебаггера из коробки), но для данного масштаба это несущественно.
 
-**Client-side idempotency key**
+**Idempotency key на клиенте**
 
-The key is generated in the browser via `crypto.randomUUID()`. This is simple and doesn't require a server round-trip. The trade-off is that if the user opens the same form in two tabs simultaneously and submits from both, they get two different keys and two withdrawals. In production a server-issued key (tied to a session) would prevent that. For a single-user, single-tab flow this is fine.
+Ключ генерируется в браузере через `crypto.randomUUID()` — без лишнего round-trip на сервер. Компромисс: если пользователь откроет форму в двух вкладках и отправит из обеих, он получит два разных ключа и две заявки. В продакшне ключ, выданный сервером и привязанный к сессии, предотвратил бы это. Для single-tab флоу подход допустим.
 
-**sessionStorage for reload recovery instead of localStorage**
+**sessionStorage вместо localStorage для восстановления состояния**
 
-`sessionStorage` is scoped to the browser tab and is cleared when the tab is closed. `localStorage` persists across sessions and tabs — stronger than we need and a slightly larger exposure surface. Neither is appropriate for tokens, but for an opaque withdrawal ID (no financial value on its own) `sessionStorage` is acceptable.
+`sessionStorage` привязан к вкладке и очищается при её закрытии. `localStorage` персистится между сессиями и вкладками — избыточно и чуть шире поверхность атаки. Ни тот ни другой не подходят для токенов, но для опакового ID заявки (сам по себе не несёт финансовой ценности) `sessionStorage` приемлем.
 
-**GET after POST instead of trusting the POST response**
+**GET после POST вместо доверия ответу POST**
 
-The POST response already contains the withdrawal data, so a second GET request might seem redundant. The reason to call GET is that in a real system the POST might return a `202 Accepted` with an initial `pending` status, and the actual status (approved/rejected) would only be visible via GET. Building this pattern now means the UI already handles async status correctly.
+Ответ POST уже содержит данные заявки, так что второй GET кажется избыточным. Но в реальной системе POST может вернуть `202 Accepted` с начальным статусом `pending`, а итоговый статус (одобрено/отклонено) будет виден только через GET. Построенная таким образом архитектура корректно обрабатывает асинхронный статус с самого начала.
 
-## Tests
+## Тесты
 
-Unit tests cover the happy-path, 409 error, and double-submit guard.
-E2E tests (Playwright, Chromium) cover the full happy-path flow and 409 conflict via network interception.
+Юнит-тесты покрывают: happy-path сабмит, ошибку 409 и защиту от двойного сабмита.
+E2E-тесты (Playwright, Chromium): полный happy-path флоу и 409 Conflict через перехват сети.
