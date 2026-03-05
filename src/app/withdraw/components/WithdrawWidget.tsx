@@ -29,7 +29,7 @@ export function WithdrawWidget() {
   }, [status, error, isNetworkError, withdrawal, retry, t]);
 
   return (
-    <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm">
+    <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
       {status === 'loading' && <LoadingState />}
 
       {status === 'success' && withdrawal && (

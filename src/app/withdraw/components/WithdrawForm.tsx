@@ -36,7 +36,7 @@ export function WithdrawForm() {
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold tracking-tight">{t('form.title')}</h2>
 
-        <div className="space-y-2">
+        <div className="flex flex-col gap-3">
           <Label htmlFor="amount">{t('form.amount.label')}</Label>
           <Input
             id="amount"
@@ -53,7 +53,7 @@ export function WithdrawForm() {
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="flex flex-col gap-3">
           <Label htmlFor="destination">{t('form.destination.label')}</Label>
           <Input
             id="destination"
