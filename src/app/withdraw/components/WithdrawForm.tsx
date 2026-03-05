@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +10,7 @@ import { Input, Button, Label } from '../ui';
 
 export function WithdrawForm() {
   const { t } = useTranslation('withdraw');
-  const { status, submit } = useWithdrawStore();
+  const { status, submit, lastPayload } = useWithdrawStore();
 
   const {
     register,
@@ -18,16 +19,19 @@ export function WithdrawForm() {
   } = useForm<WithdrawFormValues>({
     resolver: zodResolver(withdrawSchema),
     defaultValues: {
-      amount: undefined,
-      destination: '',
+      amount: lastPayload?.amount ?? undefined,
+      destination: lastPayload?.destination ?? '',
       confirm: false,
     },
   });
 
-  const onSubmit = (data: WithdrawFormValues) => {
-    if (status === 'loading') return;
-    submit(data);
-  };
+  const onSubmit = useCallback(
+    (data: WithdrawFormValues) => {
+      if (status === 'loading') return;
+      submit(data);
+    },
+    [status, submit],
+  );
 
   const isLoading = status === 'loading';
 

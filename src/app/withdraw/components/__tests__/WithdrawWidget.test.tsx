@@ -25,6 +25,13 @@ jest.mock('../../store', () => {
   };
 });
 
+jest.mock('../../utils', () => ({
+  ...jest.requireActual('../../utils'),
+  loadSession: jest.fn().mockReturnValue(null),
+  clearSession: jest.fn(),
+  saveSession: jest.fn(),
+}));
+
 describe('WithdrawWidget', () => {
   let storeState: WithdrawState & WithdrawActions;
 
@@ -35,9 +42,11 @@ describe('WithdrawWidget', () => {
       isNetworkError: false,
       withdrawal: null,
       idempotencyKey: 'test-key',
+      lastPayload: null,
       submit: jest.fn(),
       reset: jest.fn(),
       retry: jest.fn(),
+      restoreFromSession: jest.fn(),
     };
     (useWithdrawStore as unknown as jest.Mock).mockImplementation(() => storeState);
   });

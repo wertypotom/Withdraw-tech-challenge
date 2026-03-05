@@ -6,10 +6,17 @@ import { useWithdrawStore } from '../store';
 import { WithdrawForm } from './WithdrawForm';
 import { notify } from '@/shared/ui';
 import { LoadingState, SuccessState, ErrorState } from '../ui';
+import { loadSession } from '../utils';
 
 export function WithdrawWidget() {
-  const { status, error, isNetworkError, withdrawal, reset, retry } = useWithdrawStore();
+  const { status, error, isNetworkError, withdrawal, reset, retry, restoreFromSession } =
+    useWithdrawStore();
   const { t } = useTranslation('withdraw');
+
+  React.useEffect(() => {
+    const id = loadSession();
+    if (id) restoreFromSession(id);
+  }, []);
 
   React.useEffect(() => {
     if (status === 'success' && withdrawal) {
