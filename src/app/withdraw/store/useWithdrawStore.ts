@@ -3,7 +3,7 @@ import type { WithdrawalResponse, WithdrawalRequest, WithdrawStatus } from '../t
 import { NetworkError } from '@/shared/api';
 import { createWithdrawal } from '../api';
 
-interface WithdrawState {
+export interface WithdrawState {
   status: WithdrawStatus;
   error: string | null;
   isNetworkError: boolean;
@@ -11,7 +11,7 @@ interface WithdrawState {
   idempotencyKey: string;
 }
 
-interface WithdrawActions {
+export interface WithdrawActions {
   submit: (payload: Omit<WithdrawalRequest, 'idempotency_key'>) => Promise<void>;
   retry: () => void;
   reset: () => void;
