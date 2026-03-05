@@ -1,4 +1,6 @@
-import type { WithdrawalRequest, WithdrawalResponse, ApiError } from '@/shared/types';
+import type { WithdrawalRequest, WithdrawalResponse } from '../types';
+import type { ApiError } from '@/shared/types';
+
 import { ConflictError, NetworkError, ApiValidationError } from '@/shared/api';
 
 const BASE_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api/v1'}/withdrawals`;

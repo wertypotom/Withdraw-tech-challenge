@@ -1,1 +1,1 @@
-export type { WithdrawalRequest, WithdrawalResponse, WithdrawalStatus, ApiError } from './api';
+export type { ApiError } from './api';

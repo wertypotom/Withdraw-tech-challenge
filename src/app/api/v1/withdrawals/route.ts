@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { ApiError, WithdrawalRequest, WithdrawalResponse } from '@/shared/types';
+import type { ApiError } from '@/shared/types';
+import type { WithdrawalRequest, WithdrawalResponse } from '@/app/withdraw/types';
 
 const IDEMPOTENCY_TTL_MS = 5 * 60 * 1000;
 
